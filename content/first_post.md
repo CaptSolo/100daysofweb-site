@@ -17,6 +17,12 @@ We are writing this in Markdown. We can use two * symbols to indicate a **bold**
 We can use a single * around the text to indicate an *italic* formatted text.
 
 
+### Let's add an image here
+
+![PyBites Logo]({static}/images/pb-logo.png)
+
+
+
 The end!
 
 
