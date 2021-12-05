@@ -8,6 +8,10 @@ TIMEZONE = 'Europe/Riga'
 
 DEFAULT_LANG = 'en'
 
+# Theme specific configuration
+THEME = "themes/aboutwilson"
+#THEME = "../pelican-themes/Flex"
+
 # Feed generation is usually not desired when developing
 FEED_ALL_ATOM = None
 CATEGORY_FEED_ATOM = None
