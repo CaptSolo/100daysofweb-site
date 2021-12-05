@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>NQuad parsing using Jython — 100 Days of Web - Site</title>
+	<meta name="description" content="Title: NQuad parsing using Jython; Date: 2021-12-05; Author: Uldis">
+	<meta name="author" content="Uldis">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+	<!--[if lt IE 9]>
+		<script src="/theme/html5.js"></script>
+		<![endif]-->
+	<link href="/theme/css/ipython.css" rel="stylesheet">
+	<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+	<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+	<link href="//maxcdn.bootstrapcdn.com/bootswatch/3.2.0/simplex/bootstrap.min.css" rel="stylesheet">
+	<link href="/theme/css/local.css" rel="stylesheet">
+	<link href="/theme/css/pygments.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+	<div class="page-header">
+		<h1><a href="/">100 Days of Web - Site</a>
+			<br>	</div>
+	<div class="row">
+		<div class="col-md-8 col-md-offset-2">
+<div class="article" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="text-center article-header">
+		<h1 itemprop="name headline" class="article-title">NQuad parsing using Jython</h1>
+		<span itemprop="author" itemscope itemtype="http://schema.org/Person">
+			<h4 itemprop="name">Uldis</h4>
+		</span>
+		<time datetime="2021-12-05T16:00:00+02:00" itemprop="datePublished">Sun 05 December 2021</time>
+	</div>
+	<div>
+		Category:
+		<span itemprop="articleSection">
+			<a href="/category/semantic-web.html" rel="category">Semantic Web</a>
+		</span>
+	</div>
+ 
+	<div>
+		Tags:
+		<span itemprop="keywords">
+			<a href="/tag/semantic-web.html" rel="tag">semantic web</a>
+		</span>
+		<span itemprop="keywords">
+			<a href="/tag/software-development.html" rel="tag">software development</a>
+		</span>
+	</div>
+	<div itemprop="articleBody" class="article-body"><p>When in need to parse NQuad RDF files (e.g., the Billion Triples Challenge data files) Java folks can use the NxParser by Aidan Hogan and Andreas Harth: <a href="https://web.archive.org/web/20120725174828/http://sw.deri.org/2006/08/nxparser/">NxParser - Parser for NTriples, NQuads, and more</a>.</p>
+<p>You can also use it from Python (provided you use the Jython implementation).</p>
+<p>Code:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;./nxparser.jar&quot;</span><span class="p">)</span>
+
+    <span class="kn">from</span> <span class="nn">org.semanticweb.yars.nx.parser</span> <span class="kn">import</span> <span class="o">*</span>
+    <span class="kn">from</span> <span class="nn">java.io</span> <span class="kn">import</span> <span class="n">FileInputStream</span>
+    <span class="kn">from</span> <span class="nn">java.util.zip</span> <span class="kn">import</span> <span class="n">GZIPInputStream</span>
+
+    <span class="k">def</span> <span class="nf">all_triples</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">use_gzip</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">in_file</span> <span class="o">=</span> <span class="n">FileInputStream</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">use_gzip</span><span class="p">:</span>
+            <span class="n">in_file</span> <span class="o">=</span> <span class="n">GZIPInputStream</span><span class="p">(</span><span class="n">in_file</span><span class="p">)</span>
+
+        <span class="n">nxp</span> <span class="o">=</span> <span class="n">NxParser</span><span class="p">(</span><span class="n">in_file</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="n">nxp</span><span class="o">.</span><span class="n">hasNext</span><span class="p">():</span>
+            <span class="n">triple</span> <span class="o">=</span> <span class="n">nxp</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+            <span class="n">n3</span> <span class="o">=</span> <span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">toN3</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">triple</span><span class="p">])</span>
+            <span class="k">yield</span> <span class="n">n3</span>
+</code></pre></div>
+
+<p>The code above defines a generator function which will yield a stream of NQuad records. We can now add some demo code in order to see it in action:</p>
+<p>Code:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">def</span> <span class="nv">main</span><span class="ss">()</span>:
+        <span class="nv">gzfname</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">sioc-btc-2009.gz</span><span class="s2">&quot;</span>
+
+        <span class="k">for</span> <span class="nv">line</span> <span class="nv">in</span> <span class="nv">all_triples</span><span class="ss">(</span><span class="nv">gzfname</span>, <span class="nv">use_gzip</span><span class="o">=</span><span class="nv">True</span><span class="ss">)</span>:
+            <span class="nv">print</span> <span class="nv">line</span>
+
+    <span class="k">if</span> <span class="nv">__name__</span> <span class="o">==</span> <span class="s2">&quot;</span><span class="s">__main__</span><span class="s2">&quot;</span>:
+        <span class="nv">main</span><span class="ss">()</span>
+</code></pre></div>
+
+<p>Code:</p>
+<div class="highlight"><pre><span></span><code>    [<span class="nv">u</span><span class="s1">&#39;</span><span class="s">&lt;http://2008.blogtalk.net/node/29&gt;</span><span class="s1">&#39;</span>, <span class="nv">u</span><span class="s1">&#39;</span><span class="s">&lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt;</span><span class="s1">&#39;</span>, <span class="nv">u</span><span class="s1">&#39;</span><span class="s">&lt;http://rdfs.org/sioc/ns#Post&gt;</span><span class="s1">&#39;</span>, <span class="nv">u</span><span class="s1">&#39;</span><span class="s">&lt;http://2008.blogtalk.net/sioc/node/29&gt;</span><span class="s1">&#39;</span>]
+
+    [<span class="nv">u</span><span class="s1">&#39;</span><span class="s">&lt;http://2008.blogtalk.net/node/65&gt;</span><span class="s1">&#39;</span>, <span class="nv">u</span><span class="s1">&#39;</span><span class="s">&lt;http://rdfs.org/sioc/ns#content&gt;</span><span class="s1">&#39;</span>, <span class="nv">u</span><span class="s1">&#39;</span><span class="s">&quot;We\</span><span class="s1">&#39;</span><span class="nv">ve</span> <span class="nv">created</span> <span class="nv">a</span> <span class="nv">map</span> <span class="nv">showing</span> <span class="nv">the</span> <span class="nv">main</span> <span class="nv">places</span> <span class="nv">of</span> <span class="nv">interest</span> <span class="ss">(</span><span class="nv">event</span> <span class="nv">locations</span>, <span class="nv">restaurants</span>, <span class="nv">pubs</span>, <span class="nv">shopping</span> <span class="nv">locations</span> <span class="nv">and</span> <span class="nv">tourist</span> <span class="nv">sights</span><span class="ss">)</span> <span class="nv">during</span> <span class="nv">BlogTalk</span> <span class="mi">2008</span>.  <span class="nv">The</span> <span class="nv">conference</span> <span class="nv">venue</span> <span class="nv">is</span> <span class="nv">shown</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">left</span><span class="o">-</span><span class="nv">hand</span> <span class="nv">side</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">map</span>.  <span class="nv">We</span> <span class="nv">will</span> <span class="nv">also</span> <span class="nv">have</span> <span class="nv">a</span> <span class="nv">hardcopy</span> <span class="k">for</span> <span class="nv">all</span> <span class="nv">attendees</span>. <span class="nv">View</span> <span class="nv">Larger</span> <span class="nv">Map</span><span class="s2">&quot;</span><span class="s">&#39;, u&#39;&lt;http://2008.blogtalk.net/sioc/node/65&gt;&#39;]</span>
+</code></pre></div>
+
+<p>Notes:
+  - I was using this code to parse BTC data files.
+  - NQuad parsing was recently added to <a href="http://librdf.org">Redland</a>.</p>
+<p><em>Hmmm. Markdown lists are not working for me here. How can I solve this?</em></p></div>
+	<hr>
+	<h2>Comments</h2>
+</div>
+		</div>
+	</div> 	<!-- <hr> -->
+</div> <!-- /container -->
+<footer class="aw-footer bg-danger">
+	<div class="container"> <!-- footer -->
+		<div class="row">
+			<div class="col-md-10 col-md-offset-1">
+				<div class="row">
+					<div class="col-md-3">
+						<h4>Navigation</h4>
+						<ul class="list-unstyled my-list-style">
+							<li><a href="">100 Days of Web - Site</a></li>
+							<li><a href="/pages/about.html"><i class="fa fa-About "></i> About</a></li>
+							<li><a href="/pages/useful-links.html"><i class="fa fa-Useful Links "></i> Useful Links</a></li>
+						</ul>
+					</div>
+					<div class="col-md-3">
+						<h4>Author</h4>
+						<ul class="list-unstyled my-list-style">
+							<li><a href="#">You can add links in your config file</a></li>
+							<li><a href="#">Another social link</a></li>
+						</ul>
+					</div>
+					<div class="col-md-3">
+						<h4>Categories</h4>
+						<ul class="list-unstyled my-list-style">
+							<li><a href="/category/python.html">Python (1)</a></li>
+							<li><a href="/category/semantic-web.html">Semantic Web (2)</a></li>
+						</ul>
+					</div>
+					<div class="col-md-3">
+						<h4>Links</h4>
+						<ul class="list-unstyled my-list-style">
+							<li><a href="https://getpelican.com/">Pelican</a></li>
+							<li><a href="https://www.python.org/">Python.org</a></li>
+							<li><a href="https://palletsprojects.com/p/jinja/">Jinja2</a></li>
+							<li><a href="#">You can modify those links in your config file</a></li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</footer>
+<div class="container">
+	<div class="row">
+		<div class="col-md-12 text-center center-block aw-bottom">
+			<p>&copy; Uldis 2016</p>
+			<p>Powered by Pelican</p>
+		</div>
+	</div>
+</div>
+<!-- JavaScript -->
+<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+	$("div.collapseheader").click(function () {
+		$header = $(this).children("span").first();
+		$codearea = $(this).children(".input_area");
+		$codearea.slideToggle(500, function () {
+			$header.text(function () {
+				return $codearea.is(":visible") ? "Collapse Code" : "Expand Code";
+			});
+		});
+	});
+});
+</script>
+</body>
+</html>
